@@ -13,38 +13,38 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type Resto struct {
-	ID       primitive.ObjectID `"json":"_id" "bson":"_id,omitempty"`
+type Restaurant struct {
+	ID       primitive.ObjectID `"bson":"_id,omitempty"`
 	Location struct {
-		Coordinates [2]float64 `"json":"coordinates" "bson":"coordinates"`
-		Kind        string     `"json":"type" "bson":"type"`
-	} `"json":"location" "bson":"location"`
-	Name string `"json":"name" "bson":"name"`
+		Coordinates [2]float64 `"bson":"coordinates"`
+		Kind        string     `"bson":"type"`
+	} `"bson":"location"`
+	Name string `"bson":"name"`
+}
+
+func createGeoIndex(coll *mongo.Collection) {
+	model := mongo.IndexModel{
+		Keys: bson.M{
+			"location": "2dsphere",
+		}, Options: nil,
+	}
+	coll.Indexes().CreateOne(context.TODO(), model)
 }
 
 func main() {
 	const mongodbURI = "mongodb://localhost:27017/"
 	var ClientOptions = options.Client().ApplyURI(mongodbURI)
-	/*
-		var test1 = bson.M{
-			"location" : {
-				"coordinates" : [5,5],
-				"type" : "point"
-			}
-			"name" : "test"
-		}
-	*/
+
 	client, err := mongo.Connect(context.TODO(), ClientOptions)
 	if err != nil {
 		log.Fatal("cannot connect to mongodb")
 	}
 	defer client.Disconnect(context.TODO())
 
-	//neighborhoods := client.Database("test").Collection("neighborhoods")
 	filter := bson.D{{}}
 	restaurants := client.Database("test").Collection("restaurants")
 
-	//	res := restaurants.FindOne(context.TODO(), filter)
+	createGeoIndex(restaurants)
 
 	cursor, err := restaurants.Find(context.TODO(), filter, options.Find().SetLimit(5))
 
@@ -58,7 +58,7 @@ func main() {
 	for cursor.Next(context.TODO()) {
 
 		// create a value into which the single document can be decoded
-		var elem Resto
+		var elem Restaurant
 		err := cursor.Decode(&elem)
 		if err != nil {
 			log.Fatal(err)
