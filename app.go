@@ -14,12 +14,12 @@ import (
 )
 
 type Restaurant struct {
-	ID       primitive.ObjectID `"bson":"_id,omitempty"`
+	ID       primitive.ObjectID `bson:"_id,omitempty"`
 	Location struct {
-		Coordinates [2]float64 `"bson":"coordinates"`
-		Kind        string     `"bson":"type"`
-	} `"bson":"location"`
-	Name string `"bson":"name"`
+		Coordinates [2]float64 `bson:"coordinates"`
+		Kind        string     `bson:"type"`
+	} `bson:"location"`
+	Name string `bson:"name"`
 }
 
 //https://docs.mongodb.com/manual/reference/method/db.collection.createIndex/#recreating-an-existing-index
