@@ -34,7 +34,11 @@ func createGeoIndex(coll *mongo.Collection) {
 
 func searchWithinRadius(coll *mongo.Collection, coords [2]float64, radiusInKM int) {
 	log.Printf("\nSearching [%f,%f] radius %d", coords[0], coords[1], radiusInKM)
-	filter := bson.M{"location": bson.M{"nearSphere": bson.M{"geometry": bson.M{"type": "Point", "coordinates": coords}}, "maxDistance": radiusInKM * 1000}}
+
+	//filter := bson.M{"location": bson.M{"nearSphere": bson.M{"geometry": bson.M{"type": "Point", "coordinates": coords}}, "maxDistance": radiusInKM * 1000}}
+
+	nearSphere := bson.D{{"geometry", bson.M{"coordinates": coords, "type": "Point"}}, {"maxDistance", radiusInKM * 1000}}
+	filter := bson.M{"location": bson.M{"nearSphere": nearSphere}}
 
 	cursor, err := coll.Find(context.TODO(), filter, options.Find().SetLimit(5))
 
@@ -75,11 +79,11 @@ func main() {
 	restaurants := client.Database("test").Collection("restaurants")
 
 	createGeoIndex(restaurants)
-	testLoc := [2]float64{-73.96170, 40.66294}
-	searchWithinRadius(restaurants, testLoc, 10)
-	searchWithinRadius(restaurants, testLoc, 15)
-	searchWithinRadius(restaurants, testLoc, 20)
-	searchWithinRadius(restaurants, testLoc, 25)
-	searchWithinRadius(restaurants, testLoc, 30)
+	testLoc := [2]float64{-73.871194, 40.6730975}
+	searchWithinRadius(restaurants, testLoc, 1)
+	searchWithinRadius(restaurants, testLoc, 2)
+	searchWithinRadius(restaurants, testLoc, 3)
+	searchWithinRadius(restaurants, testLoc, 4)
+	searchWithinRadius(restaurants, testLoc, 6)
 
 }
