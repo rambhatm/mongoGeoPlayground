@@ -22,6 +22,7 @@ type Restaurant struct {
 	Name string `"bson":"name"`
 }
 
+//https://docs.mongodb.com/manual/reference/method/db.collection.createIndex/#recreating-an-existing-index
 func createGeoIndex(coll *mongo.Collection) {
 	model := mongo.IndexModel{
 		Keys: bson.M{
@@ -31,22 +32,11 @@ func createGeoIndex(coll *mongo.Collection) {
 	coll.Indexes().CreateOne(context.TODO(), model)
 }
 
-func main() {
-	const mongodbURI = "mongodb://localhost:27017/"
-	var ClientOptions = options.Client().ApplyURI(mongodbURI)
+func searchWithinRadius(coll *mongo.Collection, coords [2]float64, radiusInKM int) {
+	log.Printf("\nSearching [%f,%f] radius %d", coords[0], coords[1], radiusInKM)
+	filter := bson.M{"location": bson.M{"nearSphere": bson.M{"geometry": bson.M{"type": "Point", "coordinates": coords}}, "maxDistance": radiusInKM * 1000}}
 
-	client, err := mongo.Connect(context.TODO(), ClientOptions)
-	if err != nil {
-		log.Fatal("cannot connect to mongodb")
-	}
-	defer client.Disconnect(context.TODO())
-
-	filter := bson.D{{}}
-	restaurants := client.Database("test").Collection("restaurants")
-
-	createGeoIndex(restaurants)
-
-	cursor, err := restaurants.Find(context.TODO(), filter, options.Find().SetLimit(5))
+	cursor, err := coll.Find(context.TODO(), filter, options.Find().SetLimit(5))
 
 	if err != nil {
 		log.Fatal(err)
@@ -70,5 +60,26 @@ func main() {
 	if err := cursor.Err(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func main() {
+	const mongodbURI = "mongodb://localhost:27017/"
+	var ClientOptions = options.Client().ApplyURI(mongodbURI)
+
+	client, err := mongo.Connect(context.TODO(), ClientOptions)
+	if err != nil {
+		log.Fatal("cannot connect to mongodb")
+	}
+	defer client.Disconnect(context.TODO())
+
+	restaurants := client.Database("test").Collection("restaurants")
+
+	createGeoIndex(restaurants)
+	testLoc := [2]float64{-73.96170, 40.66294}
+	searchWithinRadius(restaurants, testLoc, 10)
+	searchWithinRadius(restaurants, testLoc, 15)
+	searchWithinRadius(restaurants, testLoc, 20)
+	searchWithinRadius(restaurants, testLoc, 25)
+	searchWithinRadius(restaurants, testLoc, 30)
 
 }
